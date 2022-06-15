@@ -139,36 +139,44 @@ const likePost = async (req) => {
   const postId = req.params.id;
   const userId = req.body.userId;
   let post;
-  let alreadyLiked;
+  let isLiked = false;
 
   if (!postId || !userId) return status.errException();
 
   try {
-    post = Post.findOne({ _id: postId });
+    post = await Post.findOne({ _id: postId });
   } catch (error) {
     return status.errServer();
   }
 
   if (!post) return status.errNotFound();
-
   post = post.toJSON();
-
   const likesCount = post.likes.length;
+  isLiked = likesCount > 0;
+
   for (let i = 0; i < likesCount; i++) {
-    if (post.likes[i] === userId) {
-      alraeadyLiked = true;
+    if (post.likes[i].toString() === userId) {
+      isLiked = true;
+      break;
+    } else {
+      isLiked = false;
     }
   }
 
-  const likes = alreadyLiked ? { $pull: { likes: userId } } : { $pull: { likes: userId } };
+  const likes = isLiked ? { $pull: { likes: userId } } : { $push: { likes: userId } };
 
   try {
-    Post.updateOne({ _id: postId }, likes);
+    await Post.updateOne({ _id: postId }, likes);
+  } catch (err) {
+    return status.errServer();
+  }
+  try {
+    post = (await Post.findOne({ _id: postId })).toJSON();
   } catch (err) {
     return status.errServer();
   }
 
-  return status.success("updated");
+  return status.success(post);
 };
 
 module.exports = { createPost, updatePost, deletePost, getPostById, getPostPaginated, uploadPicture, getPostByContent, likePost };
