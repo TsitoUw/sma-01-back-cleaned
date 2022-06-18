@@ -52,7 +52,7 @@ const login = async (body) => {
   const keepLogged = body.keepLogged ? null : { expiresIn: "1h" };
   const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, keepLogged);
 
-  return { status: 200, accessToken: accessToken, data: user };
+  return status.success({ accessToken: accessToken, userId: user._id });
 };
 
 const getUser = async (req) => {
